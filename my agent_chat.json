@@ -1,0 +1,1862 @@
+{
+  "name": "my agent_chat",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Text }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are a WhatsApp AI Assistant. Your job is to understand the user's request and either answer directly or delegate social media tasks to the social_media tool. The current date and time is {{ $now.toString() }}\n\n## Tools\n- Think: Use for complex reasoning only.\n- social_media: Handle all social media related requests.\n\n## Rules\n- Reply in the user's language.\n- If the request involves social media (posts, captions, hashtags, campaigns, content ideas, publishing, scheduling, rewriting posts, marketing content, etc.), ALWAYS call the social_media tool.\n- Never create social media content yourself.\n- Use Think only when necessary.\n- Do not mention tools or internal reasoning.\n- Return only the final answer.\n\n## Instructions\n1. Determine the user's intent.\n2. If it is a social media task, ALWAYS delegate it to social_media.\n3. Otherwise answer normally.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        512,
+        -1456
+      ],
+      "id": "f03399f4-d9f4-41d9-a28a-512a1380f82d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        -1248
+      ],
+      "id": "facc35e9-8d11-4995-8799-2b8373188f7d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "wDbP0uoK2fYnvwmK",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.data.message.conversation }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "de9d8507-d34a-4a30-8906-bde46b887712"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "81a80a59-115b-4767-a124-c33ce66f2b21",
+                    "leftValue": "={{ $json.body.data.message.audioMessage }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0dd7c5fa-42f5-4d3b-9c62-77688a500027",
+                    "leftValue": "={{ $json.body.data.message.imageMessage }}",
+                    "rightValue": "={{ $json.messages[0].image }}",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        -1232
+      ],
+      "id": "7643663b-5b42-442e-8e83-997e9be382e2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        -1216
+      ],
+      "id": "bcc89de4-30bf-47d1-bd31-56139bd74213",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "51b329b2-532e-4f02-8afd-5f07f95e6cc7",
+              "name": "Text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -1216
+      ],
+      "id": "7e338331-6cc4-44f4-b643-ac63b99b6902",
+      "name": "voice"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "51b329b2-532e-4f02-8afd-5f07f95e6cc7",
+              "name": "Text",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -656,
+        -1392
+      ],
+      "id": "18ec30a2-c2f8-415c-860b-d5701c5db4a4",
+      "name": "Text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "89080467-1bc0-4aed-9506-f4ac1826019d",
+              "leftValue": "={{ $('Webhook').item.json.body.data.messageType }}",
+              "rightValue": "conversation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1eebad97-04f7-4604-b7b6-54ad692a3ab6",
+              "leftValue": "={{ $('Webhook').item.json.body.data.messageType }}",
+              "rightValue": "imageMessage",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -1456
+      ],
+      "id": "8cc4eaab-edc2-417a-b785-74f20eca8da3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.output }}",
+        "options": {
+          "response_format": "mp3"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1280,
+        -1168
+      ],
+      "id": "3508e3c1-2499-4727-bbd1-8e9dab2b85e7",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "What's in this image ,extract every thing?",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -512,
+        -1024
+      ],
+      "id": "38030a93-f5b8-47e2-a109-b01a587dbc10",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "51b329b2-532e-4f02-8afd-5f07f95e6cc7",
+              "name": "Text",
+              "value": "=# the author provided image and text\n\n## image describtion\n{{ $json['0'].content[0].text }}\n## user message\n{{ $('Webhook').item.json.body.data.message.imageMessage.caption }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        -1024
+      ],
+      "id": "f272425e-3055-4f13-8fe8-8cee14d25400",
+      "name": "text+imge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "22e42d36-ed7e-4eb3-af3b-f4bd5b4e4fc7",
+              "leftValue": "={{ $json.body.data.pushName }}",
+              "rightValue": "Aཽhཽmཽeཽdཽ Eཽaཽdཽ",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "408e8315-52ec-4c8c-bc77-a36111c60a0f",
+              "leftValue": "={{ $json.body.data.key.remoteJid }}",
+              "rightValue": "201556316452@s.whatsapp.net",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c35a0b8b-f08b-4105-acc1-6645e8eb47db",
+              "leftValue": "={{ $json.body.data.key.remoteJid }}",
+              "rightValue": "201141955633@s.whatsapp.net",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1408,
+        -1200
+      ],
+      "id": "20ef7ace-583a-4b43-bc68-5d68eef035e4",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "content": "# Input\n",
+        "height": 816,
+        "width": 1904
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        -1536
+      ],
+      "id": "be6c862f-28a0-4074-a07c-8ec7351dac43",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Text\n\n",
+        "width": 848,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        -1408
+      ],
+      "id": "e2f9751d-ac15-407e-8733-e68679a2efda",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# voice\n\n\n",
+        "width": 848,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        -1232
+      ],
+      "id": "20725f64-8d8d-4372-81a8-151d460d110f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Image\n\n\n",
+        "height": 176,
+        "width": 848,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        -1056
+      ],
+      "id": "303af61d-5a4d-41d8-b13c-b35a93b49242",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# Parent Agent\n",
+        "height": 416,
+        "width": 848,
+        "color": "#6E13A0"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -1504
+      ],
+      "id": "a01a09ad-c148-4b15-b286-e305382c4015",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Output\n",
+        "height": 688,
+        "width": 1136
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -1568
+      ],
+      "id": "be224da2-6416-4098-afa6-5535dec191c6",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# Voice\n",
+        "height": 192,
+        "width": 672,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -1200
+      ],
+      "id": "71126214-6db5-476f-93d2-553e5ef70fa1",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "# text\n",
+        "height": 208,
+        "width": 688,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -1488
+      ],
+      "id": "b2aa83f1-7ba7-40de-8f7b-d4d4a6dd2c07",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        -1232
+      ],
+      "id": "8f0c5a5e-48dd-44d6-a57a-283db2a49ad8",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -832
+      ],
+      "id": "0a829478-6fbc-44f7-b5fa-8ebc38a31b91",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1-AyOj9OvLCAXpJVp2zU5U-LhpZPuHRLTIZU2-ohwO3U",
+          "mode": "list",
+          "cachedResultName": "x_post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-AyOj9OvLCAXpJVp2zU5U-LhpZPuHRLTIZU2-ohwO3U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-AyOj9OvLCAXpJVp2zU5U-LhpZPuHRLTIZU2-ohwO3U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('post__using_to_match_', `The full exact text of the generated tweet`, 'string') }}",
+            "data": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('data', `The current date and time`, 'string') }}",
+            "theme": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('theme', `The main topic or keyword of the tweet`, 'string') }}"
+          },
+          "matchingColumns": [
+            "post"
+          ],
+          "schema": [
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "theme",
+              "displayName": "theme",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post",
+              "displayName": "post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        -848
+      ],
+      "id": "2f8a87eb-485d-4234-9e8e-92c7cf7459a2",
+      "name": "X_post",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cLmp8mwR2WukD2MR",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "call this tool if you want to do anything related to social_media posts",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are a highly efficient Social Media Assistant. Your job is to create social media content, publish it directly to X (Twitter), and log every published post into a Google Sheet for tracking.\nThe current date and time is {{ $now.toString() }}\n\n## Tools Available\n1. Create Tweet in X: Use this tool FIRST to publish the generated text to X (Twitter).\n2. X_post: Use this tool SECOND to save or update the record of the published post in Google Sheets.\n\n## Rules & Workflow\n- Step 1 (Generate): Create the requested post. Keep it concise, engaging, and suitable for X.\n- Step 2 (Publish): ALWAYS call the \"Create Tweet in X\" tool to publish the post online.\n- Step 3 (Log): ALWAYS call the \"X_post\" tool to save the exact text of the published post to Google Sheets.\n- Never skip any of these steps. Both publishing and saving are mandatory.\n- If saving or publishing fails, explain the error clearly.\n- Return plain text only.\n\n## Instructions\n1. Generate the tweet based on the user's request.\n2. Publish it using the \"Create Tweet in X\" tool.\n3. Log it using the \"X_post\" tool.\n4. Reply to the user with the final text of the tweet and a confirmation that it was successfully published and saved."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -1008
+      ],
+      "id": "369ce9ac-3a2f-4436-aa72-e256d5182fd6",
+      "name": "social_media agent"
+    },
+    {
+      "parameters": {
+        "content": "## social_media agent\n\n",
+        "height": 352,
+        "width": 864,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -1040
+      ],
+      "id": "bfbe7714-dc7f-41fd-a659-23f868fcdf05",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        -368
+      ],
+      "id": "3b5c25e4-5b83-4d2e-967c-0ee208b3808a",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -368
+      ],
+      "id": "5c5aa282-bcef-4e98-811a-e90ff63797a0",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "articleId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Article_ID', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hackerNewsTool",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -368
+      ],
+      "id": "bf461360-f83f-4d1d-9b5d-e78f1f528553",
+      "name": "Get an article in Hacker News"
+    },
+    {
+      "parameters": {
+        "q": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Search_Query__q_', `The exact search query to look up on Google. Keep it concise.`, 'string') }}",
+        "location": "=Egypt",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApiTool",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -368
+      ],
+      "id": "7cfe9976-0de1-4dc3-88e3-b9d09b0e0168",
+      "name": "Google search in SerpApi",
+      "credentials": {
+        "serpApi": {
+          "id": "Unndipwibycl5Snl",
+          "name": "SerpApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## web_search agent\n\n",
+        "height": 496,
+        "width": 992,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -656
+      ],
+      "id": "0868c2b5-cddf-4798-996a-edca47087375",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        -592
+      ],
+      "id": "cd0fd7db-928f-4078-9fd0-a6e16d18e667",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "call this tool if you want to do anything related to E_mail",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are a highly efficient Email Assistant. Your job is to manage the user's Gmail account, read emails, and send messages accurately and professionally.\nThe current date and time is {{ $now.toString() }}\n\n## Tools Available\nYou have access to Gmail tools: Send a message, Get many emails, Mark as read, Delete an email, Mark as unread, and Reply to email.\n\n## Rules & Instructions\n- ALWAYS use the provided Gmail tools to execute the user's request immediately.\n- If the user asks to send an email but doesn't provide a subject, generate a relevant and professional subject line automatically.\n- Do not ask for confirmation if the recipient's email address and the message content are provided. Just send it.\n- If an action fails (e.g., disconnected account), explain the error clearly and concisely.\n- Reply to the user on WhatsApp with a short confirmation message once the email task is completed."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1424,
+        -800
+      ],
+      "id": "fa15eb9b-4e3c-4edd-ae36-371aa2f1b815",
+      "name": "E-mail agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "call this tool when you want  to search about anything",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        416,
+        -576
+      ],
+      "id": "139c06f2-a1b0-4a5e-b538-b4c19080c659",
+      "name": "search agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', `The email address of the recipient.`, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', `The subject of the email. If the user doesn't provide one, generate a short relevant subject automatically.`, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `The main content and body of the email.`, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        -576
+      ],
+      "id": "bf6b7e81-fe6c-479a-b5f6-764a4431c543",
+      "name": "Send a message",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        -576
+      ],
+      "id": "2d49335c-ac72-4b41-b21b-5995d4302a67",
+      "name": "Delete an email",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        -576
+      ],
+      "id": "7d0ed83a-f6e6-47ed-841e-aba79d5f30d9",
+      "name": "Mark as read",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -576
+      ],
+      "id": "5c986924-3b8d-4df4-b4d0-327e4a51783a",
+      "name": "Get many emails",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsUnread",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -576
+      ],
+      "id": "6842a4d3-6be0-4814-87c4-cdbdbd2211ae",
+      "name": "mark as unread",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        -576
+      ],
+      "id": "5f5f49cf-6274-4b1d-bbf5-ed058b152908",
+      "name": "Reply to email",
+      "webhookId": "c333e94f-7dc4-4c15-b9e6-838a6538caf4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pDmgpRp1oMjHHiS5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Email_agent\n\n\n",
+        "height": 496,
+        "width": 1456,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -848
+      ],
+      "id": "c2e212f5-64d5-4c6d-beee-2d1219c16850",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1152,
+        -368
+      ],
+      "id": "24e5221d-ffa5-4aa6-a466-ed92be169811",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "XxjsVEgZEtnTR74O",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "call this tool if you want to do anything related to google calender\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=## Overview\nYou are a highly efficient Calendar Assistant. Your job is to manage the user's Google Calendar and schedule meetings or events seamlessly.\nThe current date and time is {{ $now.toString() }}\n\n## Tools\n- Create an event: Use this tool to schedule a meeting or event in Google Calendar.\n\n## Rules & Instructions\n- ALWAYS create the event immediately based on the user's input without asking for confirmation or extra details.\n- If the user does not specify a meeting title, automatically use \"Quick Meeting\".\n- If the user does not specify a meeting duration or end time, automatically set the duration to 1 hour.\n- Assume the default calendar ID is \"mohamedeid17@gmail.com\".\n- Assume the timezone is UTC+03:00. Do not ask to confirm the timezone.\n- Never offer manual alternatives (like drafting an email invite or .ics file). Just create the event.\n- After successfully creating the event, return a short confirmation message to the user."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -944,
+        -592
+      ],
+      "id": "2bc159d8-bc02-4ff0-a39a-299f3181b619",
+      "name": "calender agent"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "mohamedeied17@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohamedeied17@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `The exact start date and time of the event in ISO format.`, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `The exact end date and time of the event in ISO format.`, 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -864,
+        -352
+      ],
+      "id": "9598e0cb-2bdf-47b2-b8b7-d4acd20d09e5",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jZdDSrKEOMnsqpT1",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "mohamedeied17@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohamedeied17@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -720,
+        -352
+      ],
+      "id": "a771d9fc-433d-43aa-a186-eca36145227c",
+      "name": "Delete an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jZdDSrKEOMnsqpT1",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "calendar": {
+          "__rl": true,
+          "value": "mohamedeied17@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohamedeied17@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -592,
+        -352
+      ],
+      "id": "a743f693-fbb5-46cd-915c-9925b5cbf1e7",
+      "name": "Get an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jZdDSrKEOMnsqpT1",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "mohamedeied17@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohamedeied17@gmail.com"
+        },
+        "limit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Limit', ``, 'number') }}",
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        -352
+      ],
+      "id": "13edfa30-04ec-4740-9ef0-36fd305ac754",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jZdDSrKEOMnsqpT1",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "mohamedeied17@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohamedeied17@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        -352
+      ],
+      "id": "17e1187e-f202-483a-9306-2e605fa908ad",
+      "name": "Update an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jZdDSrKEOMnsqpT1",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## calenar agent\n\n",
+        "height": 496,
+        "width": 1248,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        -656
+      ],
+      "id": "2b5a9eb8-3136-4f60-a6d0-998790be01e6",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9920332d-d689-4c69-94d2-a1ad01ac742e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1648,
+        -1200
+      ],
+      "id": "0a749ddd-12ab-49bc-9350-cae4fdc4bf33",
+      "name": "Webhook",
+      "webhookId": "9920332d-d689-4c69-94d2-a1ad01ac742e"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -992
+      ],
+      "id": "71f33094-33a5-449c-9136-15b11a484011",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.Text }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        496,
+        -1248
+      ],
+      "id": "b593923e-89fd-4ca8-842a-d2627a8e4c49",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJid.split('@')[0] }}",
+        "messageText": "={{ $('AI Agent').item.json.output }}",
+        "options_message": {
+          "delay": 1200
+        }
+      },
+      "type": "n8n-nodes-evolution-api-english.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -1440
+      ],
+      "id": "b116469d-5bc7-4d40-a75b-7d633cfad530",
+      "name": "Send text",
+      "credentials": {
+        "evolutionApi": {
+          "id": "sk6bEC2s0xsWP4lq",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {
+          "mimeType": "audio/ogg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -688,
+        -1216
+      ],
+      "id": "af35519c-4db6-47fc-a22e-747ca5d9fd85",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-audio",
+        "instanceName": "={{ $('Webhook').item.json.body.instance }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJid.split('@')[0] }}",
+        "media": "={{ $json.audio_base64 }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api-english.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -1168
+      ],
+      "id": "0d68c21c-5177-4bfb-9a64-931eae05f39c",
+      "name": "Send audio",
+      "credentials": {
+        "evolutionApi": {
+          "id": "sk6bEC2s0xsWP4lq",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n    // سحب الملف الصوتي من الذاكرة\n    const binaryBuffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n    // تحويل الملف لكود Base64\n    items[i].json.audio_base64 = binaryBuffer.toString('base64');\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        -1168
+      ],
+      "id": "eede2f86-d870-4d11-b306-6f0d34f23b76",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -688,
+        -1024
+      ],
+      "id": "045c96b2-c24d-431c-ac14-5d1cad4c75a2",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $json.body.instance }}",
+        "messageId": "={{ $json.body.data.key.id }}"
+      },
+      "type": "n8n-nodes-evolution-api-english.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -1024
+      ],
+      "id": "43c15e5c-927c-45e4-b09e-27b57da84929",
+      "name": "Get  image",
+      "credentials": {
+        "evolutionApi": {
+          "id": "sk6bEC2s0xsWP4lq",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $json.body.instance }}",
+        "messageId": "={{ $json.body.data.key.id }}"
+      },
+      "type": "n8n-nodes-evolution-api-english.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -1216
+      ],
+      "id": "a49b6393-4e73-4caf-a0bd-e34ca638dd54",
+      "name": "Get voice",
+      "credentials": {
+        "evolutionApi": {
+          "id": "sk6bEC2s0xsWP4lq",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.twitterTool",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -832
+      ],
+      "id": "6bc47f48-ec29-4f09-8c2f-28fa45f417fa",
+      "name": "Create Tweet in X",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "4heQjVLt94SazoZV",
+          "name": "X account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get  image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "voice": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "text+imge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "text+imge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "social_media agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X_post": {
+      "ai_tool": [
+        [
+          {
+            "node": "social_media agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "social_media agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "search agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "search agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an article in Hacker News": {
+      "ai_tool": [
+        [
+          {
+            "node": "search agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google search in SerpApi": {
+      "ai_tool": [
+        [
+          {
+            "node": "search agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an email": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as read": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mark as unread": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to email": {
+      "ai_tool": [
+        [
+          {
+            "node": "E-mail agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an event": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calender agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send audio": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get  image": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get voice": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tweet in X": {
+      "ai_tool": [
+        [
+          {
+            "node": "social_media agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4fef1251-5db9-4986-85af-fb9acad13861",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf97ad6953fd923b653d35d460ac472fb955332d1529297edf075a9ce7369950"
+  },
+  "nodeGroups": [],
+  "id": "uAhnzyxlpm1VJTSD",
+  "tags": []
+}
